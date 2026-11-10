@@ -4,6 +4,21 @@ AtlasShard is a cloud storage project I built to learn more about backend develo
 
 Users can create an account, upload files, download them, create different versions of the same file, and generate temporary sharing links. The project also has a storage node simulator where nodes can be taken offline and recovered.
 
+## Screenshots
+
+### Overview
+![Overview](screenshots/overview.png)
+
+### Files and Versioning
+![Files and Versioning](screenshots/files.png)
+
+### Storage Nodes
+![Storage Nodes](screenshots/storage-nodes.png)
+
+### Grafana Monitoring
+![Grafana Monitoring](screenshots/grafana.png)
+
+
 ## Features
 
 - User sign up and login
