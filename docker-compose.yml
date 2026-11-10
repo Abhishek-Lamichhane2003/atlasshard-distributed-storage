@@ -1,0 +1,159 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-atlasshard}
+      POSTGRES_USER: ${POSTGRES_USER:-atlasshard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlasshard-local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlasshard} -d ${POSTGRES_DB:-atlasshard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  kafka:
+    image: apache/kafka:4.4.0
+    hostname: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_HOST://localhost:9092,PLAINTEXT://kafka:19092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 20
+
+  minio:
+    image: docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-atlasshard}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-atlasshard-local-secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mcli alias set local http://minio:9000 ${S3_ACCESS_KEY:-atlasshard} ${S3_SECRET_KEY:-atlasshard-local-secret}; do sleep 2; done;
+      mcli mb --ignore-existing local/${S3_BUCKET:-atlasshard-objects};
+      exit 0;"
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-atlasshard}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-atlasshard}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-atlasshard-local}
+      APP_REDIS_HOST: redis
+      APP_REDIS_PORT: 6379
+      APP_KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      APP_S3_ENDPOINT: http://minio:9000
+      APP_S3_REGION: ${S3_REGION:-us-east-1}
+      APP_S3_BUCKET: ${S3_BUCKET:-atlasshard-objects}
+      APP_S3_ACCESS_KEY: ${S3_ACCESS_KEY:-atlasshard}
+      APP_S3_SECRET_KEY: ${S3_SECRET_KEY:-atlasshard-local-secret}
+      APP_JWT_SECRET: ${JWT_SECRET:-change-this-local-secret-before-public-deployment-please}
+      APP_CORS_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5174}
+      APP_COOKIE_SECURE: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - upload_tmp:/tmp/atlasshard
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "5174:5174"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.7.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9091:9090"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-atlasshard-local}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  minio_data:
+  grafana_data:
+  upload_tmp:
