@@ -84,7 +84,7 @@ Files are uploaded in chunks and checked using SHA-256. File information is stor
 
 If a file with the same path is uploaded again, AtlasShard keeps the previous copy and creates a new version.
 
-## Storage Node Simulator
+## Storage Node Placement Simulator
 
 The project also includes six simulated storage nodes.
 

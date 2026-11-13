@@ -78,7 +78,7 @@ public class UploadSessionService {
 
     public FileEntry complete(String id, String owner) throws IOException {
         Session session = readOwned(id, owner);
-        String lockKey = "upload-complete:" + id;
+        String lockKey = "atlasshard:upload-complete:" + id;
         Boolean locked = redis.opsForValue().setIfAbsent(lockKey, owner, Duration.ofMinutes(2));
         if (!Boolean.TRUE.equals(locked)) throw new ResponseStatusException(HttpStatus.CONFLICT, "upload completion already in progress");
         Path merged = base.resolve(id + ".merged");
@@ -152,8 +152,8 @@ public class UploadSessionService {
         return value.toString();
     }
 
-    private String metaKey(String id) { return "upload:" + id + ":meta"; }
-    private String chunksKey(String id) { return "upload:" + id + ":chunks"; }
+    private String metaKey(String id) { return "atlasshard:upload:" + id + ":meta"; }
+    private String chunksKey(String id) { return "atlasshard:upload:" + id + ":chunks"; }
 
     private void deleteSessionFiles(String id, Path merged) throws IOException {
         deleteRecursively(base.resolve(id));

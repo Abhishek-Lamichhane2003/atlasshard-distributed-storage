@@ -31,7 +31,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            String key = "rate:" + req.getRemoteAddr() + ":" + (System.currentTimeMillis() / 60000);
+            String key = "atlasshard:rate:" + req.getRemoteAddr() + ":" + (System.currentTimeMillis() / 60000);
             Long count = redis.opsForValue().increment(key);
             if (count != null && count == 1) redis.expire(key, Duration.ofSeconds(70));
             res.setHeader("X-RateLimit-Limit", Integer.toString(LIMIT));

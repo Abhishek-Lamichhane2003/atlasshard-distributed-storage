@@ -5,11 +5,13 @@ import com.atlasshard.storage.repo.AuditEventRepository;
 import java.time.Duration;
 import java.time.Instant;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@ConditionalOnProperty(name = "app.events.mode", havingValue = "kafka", matchIfMissing = true)
 public class EventConsumer {
     private final AuditEventRepository repo;
 

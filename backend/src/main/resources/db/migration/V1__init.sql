@@ -2,7 +2,7 @@ CREATE TABLE users (
   id varchar(36) PRIMARY KEY,
   email varchar(255) NOT NULL UNIQUE,
   password_hash varchar(255) NOT NULL,
-  created_at timestamptz NOT NULL
+  created_at timestamp with time zone NOT NULL
 );
 
 CREATE TABLE files (
@@ -14,7 +14,7 @@ CREATE TABLE files (
   object_key varchar(255) NOT NULL,
   size_bytes bigint NOT NULL,
   version_number integer NOT NULL,
-  created_at timestamptz NOT NULL
+  created_at timestamp with time zone NOT NULL
 );
 CREATE INDEX idx_files_owner ON files(owner_id);
 CREATE INDEX idx_files_hash ON files(content_hash);
@@ -26,8 +26,8 @@ CREATE TABLE share_links (
   file_id varchar(36) NOT NULL,
   owner_id varchar(36) NOT NULL,
   token_hash varchar(64) NOT NULL UNIQUE,
-  expires_at timestamptz NOT NULL,
-  created_at timestamptz NOT NULL
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone NOT NULL
 );
 CREATE INDEX idx_share_owner ON share_links(owner_id);
 CREATE INDEX idx_share_expiry ON share_links(expires_at);
@@ -36,5 +36,5 @@ CREATE TABLE audit_events (
   id varchar(36) PRIMARY KEY,
   type varchar(255) NOT NULL,
   detail varchar(1000) NOT NULL,
-  created_at timestamptz NOT NULL
+  created_at timestamp with time zone NOT NULL
 );

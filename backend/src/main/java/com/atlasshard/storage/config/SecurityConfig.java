@@ -24,6 +24,7 @@ public class SecurityConfig {
             .cors(cors -> {})
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                 .requestMatchers("/api/system/overview", "/api/shares/public/**").permitAll()
@@ -41,7 +42,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource(AppProperties props) {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of(props.corsOrigin()));
+        c.setAllowedOriginPatterns(List.of(props.corsOrigin()));
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("Content-Type", "Authorization"));
         c.setAllowCredentials(true);

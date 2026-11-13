@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/atlasshard}
@@ -43,6 +43,11 @@ app:
   jwt-secret: ${APP_JWT_SECRET:change-this-local-secret-before-public-deployment-please}
   cors-origin: ${APP_CORS_ORIGIN:http://localhost:5174}
   cookie-secure: ${APP_COOKIE_SECURE:false}
+  events:
+    mode: ${APP_EVENTS_MODE:kafka}
+  storage:
+    mode: ${APP_STORAGE_MODE:s3}
+    local-root: ${APP_STORAGE_LOCAL_ROOT:/tmp/atlasshard-objects}
   s3:
     endpoint: ${APP_S3_ENDPOINT:http://localhost:9000}
     region: ${APP_S3_REGION:us-east-1}

@@ -55,7 +55,7 @@ public class FileService {
 
     public FileEntry ingest(String owner, String name, String logicalPath, Path temp) throws IOException {
         String normalizedPath = normalizePath(logicalPath, name);
-        String lockKey = "version-lock:" + hashing.sha256Text(owner + "|" + normalizedPath);
+        String lockKey = "atlasshard:version-lock:" + hashing.sha256Text(owner + "|" + normalizedPath);
         String lockToken = acquireLock(lockKey);
         try {
             String hash = hashing.sha256(temp);

@@ -35,7 +35,12 @@ assert 'frontend-lock' in makefile
 assert 'package-lock.json' in makefile
 print('json, assets, security, truthfulness, and reproducibility checks passed')
 PY
-if grep -RInE 'TODO|FIXME|nexus90|soccer intelligence|SHARDLINE|Shardline|shardline' backend frontend README.md docker-compose.yml .env.example >/dev/null; then
+if grep -RInE \
+  --exclude-dir=node_modules \
+  --exclude-dir=dist \
+  --exclude-dir=target \
+  'TODO|FIXME|nexus90|soccer intelligence|SHARDLINE|Shardline|shardline' \
+  backend frontend README.md docker-compose.yml .env.example >/dev/null; then
   echo 'unexpected placeholder or copied branding found' >&2
   exit 1
 fi

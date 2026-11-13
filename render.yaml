@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: atlasshard-demo
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:+UseSerialGC
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:h2:file:/tmp/atlasshard/atlasshard-db;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+      - key: SPRING_DATASOURCE_USERNAME
+        value: sa
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: ""
+      - key: APP_REDIS_HOST
+        fromService:
+          type: keyvalue
+          name: soccer-intelligence-redis
+          property: host
+      - key: APP_REDIS_PORT
+        fromService:
+          type: keyvalue
+          name: soccer-intelligence-redis
+          property: port
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: APP_CORS_ORIGIN
+        value: https://*.onrender.com
+      - key: APP_COOKIE_SECURE
+        value: "true"
+      - key: APP_EVENTS_MODE
+        value: direct
+      - key: APP_STORAGE_MODE
+        value: local
+      - key: APP_STORAGE_LOCAL_ROOT
+        value: /tmp/atlasshard-objects
