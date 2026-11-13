@@ -4,6 +4,12 @@ AtlasShard is a cloud storage project I built to learn more about backend develo
 
 Users can create an account, upload files, download them, create different versions of the same file, and generate temporary sharing links. The project also has a storage node simulator where nodes can be taken offline and recovered.
 
+## Live Demo
+
+[Open AtlasShard on Render](https://atlasshard-demo.onrender.com)
+
+The free public demo uses an embedded H2 database, local object storage, and the shared Redis service so the complete React and Spring Boot workflow can run as one Render service. The Docker Compose setup below runs the full PostgreSQL, Kafka, S3-compatible storage, Prometheus, and Grafana architecture locally.
+
 ## Screenshots
 
 ### Overview
